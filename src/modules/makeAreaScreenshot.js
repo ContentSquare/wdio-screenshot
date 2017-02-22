@@ -48,7 +48,19 @@ export default async function makeAreaScreenshot(browser, startX, startY, endX, 
       const filePath = path.join(dir, `${indexY}-${indexX}.png`);
 
       log('take screenshot');
-      const base64Screenshot = (await browser.screenshot()).value;
+      const base64Screenshot = (await browser
+        .execute(function () {
+          window.backgroundSaveHTML();
+          window.lockDOMMutation();
+        })
+        .screenshot()
+        .then(function (screenshot) {
+          return browser.execute(function () {
+            window.unlockDOMMutation();
+          }).then(function () {
+            return screenshot;
+          })
+        })).value;
       const normalizedBase64Screenshot = await normalizeScreenshot(browser, screenDimension, base64Screenshot);
 
       const cropDimensions = screenshotStrategy.getCropDimensions();
